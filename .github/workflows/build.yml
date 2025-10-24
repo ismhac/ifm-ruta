@@ -1,0 +1,221 @@
+name: Manual Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - windows
+        - fedora
+      architecture:
+        description: 'Architecture to build'
+        required: true
+        default: 'x64'
+        type: choice
+        options:
+        - x64
+        - x86
+        - both
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
+    strategy:
+      matrix:
+        target: 
+          - x86_64-pc-windows-msvc
+          - i686-pc-windows-msvc
+        include:
+          - target: x86_64-pc-windows-msvc
+            arch: x64
+            artifact_name: ifm-ruta-windows-x64
+          - target: i686-pc-windows-msvc
+            arch: x86
+            artifact_name: ifm-ruta-windows-x86
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
+
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build release binaries
+      run: |
+        cargo build --release --target ${{ matrix.target }} --workspace
+
+    - name: Create Windows package
+      run: |
+        mkdir -p dist
+        copy target\${{ matrix.target }}\release\ifm-ruta-mcp.exe dist\
+        copy target\${{ matrix.target }}\release\ifm-ruta-egui.exe dist\
+        cd dist
+        Compress-Archive -Path * -DestinationPath ..\${{ matrix.artifact_name }}.zip
+
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.artifact_name }}.zip
+
+  build-fedora:
+    name: Build Fedora RPM
+    runs-on: ubuntu-latest
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'fedora' }}
+    strategy:
+      matrix:
+        target: 
+          - x86_64-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch: x86_64
+            rpm_name: ifm-ruta-x86_64
+          - target: i686-unknown-linux-gnu
+            arch: i686
+            rpm_name: ifm-ruta-i686
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
+
+    - name: Install RPM build tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rpm
+
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build release binaries
+      run: |
+        cargo build --release --target ${{ matrix.target }} --workspace
+
+    - name: Create RPM spec file
+      run: |
+        cat > ifm-ruta.spec << 'EOF'
+        Name:           ifm-ruta
+        Version:        1.0.0
+        Release:        1%{?dist}
+        Summary:        Interactive Feedback MCP - Rust + egui
+        License:        MIT
+        URL:            https://github.com/ismhac/ifm-ruta
+        Source0:        %{name}-%{version}.tar.gz
+        
+        BuildArch:      ${{ matrix.arch }}
+        
+        %description
+        A high-performance, cross-platform MCP (Model Context Protocol) server 
+        for interactive feedback in AI-assisted development, built with Rust and egui.
+        
+        %prep
+        %setup -q
+        
+        %build
+        # Binaries are pre-built
+        
+        %install
+        rm -rf $RPM_BUILD_ROOT
+        mkdir -p $RPM_BUILD_ROOT/usr/bin
+        mkdir -p $RPM_BUILD_ROOT/usr/share/doc/ifm-ruta
+        mkdir -p $RPM_BUILD_ROOT/usr/share/licenses/ifm-ruta
+        
+        # Install binaries
+        install -m 755 target/${{ matrix.target }}/release/ifm-ruta-mcp $RPM_BUILD_ROOT/usr/bin/
+        install -m 755 target/${{ matrix.target }}/release/ifm-ruta-egui $RPM_BUILD_ROOT/usr/bin/
+        
+        # Install documentation
+        install -m 644 README.md $RPM_BUILD_ROOT/usr/share/doc/ifm-ruta/
+        install -m 644 LICENSE $RPM_BUILD_ROOT/usr/share/licenses/ifm-ruta/
+        
+        %files
+        %defattr(-,root,root,-)
+        /usr/bin/ifm-ruta-mcp
+        /usr/bin/ifm-ruta-egui
+        %doc /usr/share/doc/ifm-ruta/README.md
+        %license /usr/share/licenses/ifm-ruta/LICENSE
+        
+        %changelog
+        * $(date '+%a %b %d %Y') IFM-Ruta Team <team@ifm-ruta.dev> - 1.0.0-1
+        - Initial release
+        EOF
+
+    - name: Create source tarball
+      run: |
+        tar -czf ifm-ruta-1.0.0.tar.gz \
+          --exclude='.git' \
+          --exclude='target' \
+          --exclude='.github' \
+          --exclude='*.rpm' \
+          .
+
+    - name: Build RPM package
+      run: |
+        rpmbuild -bb ifm-ruta.spec \
+          --define "_sourcedir $(pwd)" \
+          --define "_rpmdir $(pwd)/dist" \
+          --define "_builddir $(pwd)" \
+          --define "_specdir $(pwd)" \
+          --define "_srcrpmdir $(pwd)/dist"
+
+    - name: Upload Fedora artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.rpm_name }}
+        path: dist/*.rpm
+
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-fedora]
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: List artifacts
+      run: |
+        echo "## Build Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Windows Builds" >> $GITHUB_STEP_SUMMARY
+        find . -name "ifm-ruta-windows-*.zip" -exec echo "- \`{}\`" \; >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Fedora RPMs" >> $GITHUB_STEP_SUMMARY
+        find . -name "ifm-ruta-*.rpm" -exec echo "- \`{}\`" \; >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Status" >> $GITHUB_STEP_SUMMARY
+        echo "- Windows: ${{ needs.build-windows.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Fedora: ${{ needs.build-fedora.result }}" >> $GITHUB_STEP_SUMMARY

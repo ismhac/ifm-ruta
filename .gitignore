@@ -12,7 +12,6 @@ Cargo.lock
 **/*.rs.bk
 
 # Distribution and binaries
-dist/
 *.exe
 *.dll
 *.so
@@ -54,3 +53,4 @@ env.bak/
 venv.bak/
 
 docs/
+.ifm-ruta/

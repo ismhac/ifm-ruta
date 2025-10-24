@@ -9,7 +9,7 @@ pub struct MCPRequest {
     pub jsonrpc: String,
     pub id: Option<Value>,
     pub method: String,
-    pub params: Value,
+    pub params: Option<Value>,
 }
 
 /// MCP response

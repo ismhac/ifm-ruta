@@ -2,15 +2,39 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::io::{self, BufRead};
 use serde_json::{Value, json};
 
 use ifm_ruta_core::{
-    traits::{Tool, ToolError, SettingsManager, ProcessManager, EventBus},
+    traits::{Tool, SettingsManager, ProcessManager, EventBus},
     models::AppError,
 };
 
-use crate::mcp::protocol::MCPRequest;
+/// MCP Request struct like Go
+#[derive(Debug, serde::Deserialize)]
+pub struct MCPRequest {
+    pub jsonrpc: String,
+    pub id: Option<Value>,
+    pub method: String,
+    pub params: Option<Value>,
+}
+
+/// MCP Response struct like Go
+#[derive(Debug, serde::Serialize)]
+pub struct MCPResponse {
+    pub jsonrpc: String,
+    pub id: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<MCPError>,
+}
+
+/// MCP Error struct like Go
+#[derive(Debug, serde::Serialize)]
+pub struct MCPError {
+    pub code: i32,
+    pub message: String,
+}
 
 /// MCP server
 pub struct MCPServer {
@@ -41,59 +65,65 @@ impl MCPServer {
         self.tools.insert(name, tool);
     }
     
-    /// Run the MCP server
-    pub fn run(&mut self) -> Result<(), AppError> {
-        let stdin = io::stdin();
-        let mut reader = io::BufReader::new(stdin);
-        let mut line = String::new();
-        
-        while reader.read_line(&mut line)? > 0 {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                continue;
+    /// Handle a request like Go
+    pub fn handle_request(&self, request: MCPRequest) -> Result<Option<MCPResponse>, AppError> {
+        // Check if this is a notification (no id field)
+        if request.id.is_none() {
+            // Handle notifications silently (no response needed per JSON-RPC 2.0 spec)
+            match request.method.as_str() {
+                "notifications/initialized" => {
+                    // Cursor sends this after initialize - just ignore
+                    return Ok(None);
+                }
+                _ => {
+                    // Unknown notification - ignore silently
+                    return Ok(None);
+                }
             }
-            
-            // Parse the request
-            let request: MCPRequest = serde_json::from_str(trimmed)?;
-            
-            // Handle the request
-            let response = self.handle_request(request)?;
-            
-            // Send the response
-            println!("{}", serde_json::to_string(&response)?);
-            
-            line.clear();
         }
         
-        Ok(())
+        // This is a request (has id) - send response
+        let response = match request.method.as_str() {
+            "initialize" => self.handle_initialize(request),
+            "tools/list" => self.handle_tools_list(request),
+            "tools/call" => self.handle_tool_call(request),
+            _ => Ok(MCPResponse {
+                jsonrpc: "2.0".to_string(),
+                id: request.id,
+                result: None,
+                error: Some(MCPError {
+                    code: -32601,
+                    message: "Method not found".to_string(),
+                }),
+            }),
+        };
+        
+        response.map(Some)
     }
     
-    /// Handle a request
-    fn handle_request(&self, request: MCPRequest) -> Result<Value, AppError> {
-        match request.method.as_str() {
-            "initialize" => self.handle_initialize(request.params),
-            "tools/list" => self.handle_tools_list(),
-            "tools/call" => self.handle_tool_call(request.params),
-            _ => Err(AppError::InternalError(anyhow::anyhow!("Unknown method: {}", request.method))),
-        }
+    /// Handle initialize request like Go
+    fn handle_initialize(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
+        Ok(MCPResponse {
+            jsonrpc: "2.0".to_string(),
+            id: request.id,
+            result: Some(json!({
+                "protocolVersion": "2024-11-05",
+                "capabilities": {
+                    "tools": {
+                        "listChanged": true
+                    }
+                },
+                "serverInfo": {
+                    "name": "interactive-feedback-mcp",
+                    "version": "1.0.0"
+                }
+            })),
+            error: None,
+        })
     }
     
-    /// Handle initialize request
-    fn handle_initialize(&self, _params: Value) -> Result<Value, AppError> {
-        Ok(json!({
-            "protocolVersion": "2024-11-05",
-            "capabilities": {
-                "tools": {}
-            },
-            "serverInfo": {
-                "name": "ifm-ruta-mcp",
-                "version": "0.1.0"
-            }
-        }))
-    }
-    
-    /// Handle tools/list request
-    fn handle_tools_list(&self) -> Result<Value, AppError> {
+    /// Handle tools/list request like Go
+    fn handle_tools_list(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
         let tools: Vec<Value> = self.tools
             .values()
             .map(|tool| {
@@ -105,13 +135,19 @@ impl MCPServer {
             })
             .collect();
         
-        Ok(json!({
-            "tools": tools
-        }))
+        Ok(MCPResponse {
+            jsonrpc: "2.0".to_string(),
+            id: request.id,
+            result: Some(json!({
+                "tools": tools
+            })),
+            error: None,
+        })
     }
     
-    /// Handle tools/call request
-    fn handle_tool_call(&self, params: Value) -> Result<Value, AppError> {
+    /// Handle tools/call request like Go
+    fn handle_tool_call(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
+        let params = request.params.unwrap_or(json!({}));
         let tool_name = params.get("name")
             .and_then(|v| v.as_str())
             .ok_or_else(|| AppError::InternalError(anyhow::anyhow!("Missing tool name")))?;
@@ -124,13 +160,19 @@ impl MCPServer {
             .ok_or_else(|| AppError::InternalError(anyhow::anyhow!("Tool not found: {}", tool_name)))?;
         
         // Execute the tool
-        let result = tool.execute(arguments)?;
+        let tool_result = tool.execute(arguments)?;
+        let result_json = serde_json::to_string(&tool_result)?;
         
-        Ok(json!({
-            "content": [{
-                "type": "text",
-                "text": serde_json::to_string(&result)?
-            }]
-        }))
+        Ok(MCPResponse {
+            jsonrpc: "2.0".to_string(),
+            id: request.id,
+            result: Some(json!({
+                "content": [{
+                    "type": "text",
+                    "text": result_json
+                }]
+            })),
+            error: None,
+        })
     }
 }

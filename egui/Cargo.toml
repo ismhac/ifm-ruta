@@ -8,7 +8,7 @@ name = "ifm-ruta-egui"
 path = "src/main.rs"
 
 [dependencies]
-ifm-ruta-core = { path = "../ifm-ruta-core" }
+ifm-ruta-core = { path = "../core" }
 eframe = { version = "0.28", features = ["default"] }
 egui = "0.28"
 serde = { version = "1.0", features = ["derive"] }

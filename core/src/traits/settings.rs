@@ -1,6 +1,5 @@
 //! Settings management interface
 
-use serde::{Deserialize, Serialize};
 use std::result::Result;
 
 /// Settings management interface

@@ -7,7 +7,9 @@ use eframe::egui;
 use serde::Deserialize;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
+use std::path::Path;
 use include_dir::{include_dir, Dir};
+use ifm_ruta_core::services::ConversationStorage;
 
 // Include fonts directory
 static FONTS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/fonts");
@@ -33,13 +35,45 @@ impl ConversationEntry {
 struct ConversationManager {
     conversations: Arc<Mutex<VecDeque<ConversationEntry>>>,
     max_size: usize,
+    storage: Option<ConversationStorage>,
 }
 
 impl ConversationManager {
-    fn new(max_size: usize) -> Self {
-        Self {
+    // Removed unused new() method
+    
+    fn new_with_storage(max_size: usize, project_directory: &Path) -> Self {
+        let storage = ConversationStorage::new(project_directory);
+        let mut manager = Self {
             conversations: Arc::new(Mutex::new(VecDeque::new())),
             max_size,
+            storage: Some(storage),
+        };
+        
+        // Load real conversation history
+        manager.load_conversation_history();
+        manager
+    }
+    
+    fn load_conversation_history(&mut self) {
+        if let Some(ref storage) = self.storage {
+            // Load all conversation sessions from storage
+            match storage.get_project_sessions() {
+                Ok(sessions) => {
+                    println!("Loaded {} conversation sessions", sessions.len());
+                    for session in sessions {
+                        println!("Loading session: {} with {} messages", session.session_id, session.messages.len());
+                        // Add all messages from this session
+                        for message in session.messages {
+                            self.add_conversation(message.role, message.content);
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("Error loading conversation sessions: {}", e);
+                }
+            }
+        } else {
+            println!("No storage available");
         }
     }
 
@@ -68,19 +102,13 @@ impl ConversationManager {
 }
 
 #[derive(Deserialize)]
-struct ConversationContent {
-    user_message: String,
-    assistant_response: String,
-}
-
-#[derive(Deserialize)]
 struct CursorContext {
     method: String,
     tool_name: String,
     arguments: serde_json::Value,
     timestamp: String,
     request_id: u64,
-    conversation_content: Option<ConversationContent>,
+    // conversation_content: Option<ConversationContent>, // Removed unused field
 }
 
 /// Application state
@@ -95,38 +123,8 @@ struct App {
 
 impl App {
     fn new(project_directory: String, summary: String, cursor_context: Option<CursorContext>) -> Self {
-        let conversation_manager = ConversationManager::new(5);
-        
-        // Add current conversation from cursor context
-        if let Some(context) = &cursor_context {
-            // Add real conversation content if available
-            if let Some(conv_content) = &context.conversation_content {
-                conversation_manager.add_conversation(
-                    "user".to_string(),
-                    conv_content.user_message.clone()
-                );
-                conversation_manager.add_conversation(
-                    "assistant".to_string(),
-                    conv_content.assistant_response.clone()
-                );
-            } else {
-                // Fallback to tool call info
-                conversation_manager.add_conversation(
-                    "user".to_string(),
-                    format!("MCP Tool Call: {} - {}", context.tool_name, summary)
-                );
-            }
-        } else {
-            // Add fallback conversation for testing
-            conversation_manager.add_conversation(
-                "user".to_string(),
-                format!("User request: {}", summary)
-            );
-            conversation_manager.add_conversation(
-                "assistant".to_string(),
-                "MCP tool called successfully".to_string()
-            );
-        }
+        // Use real conversation storage
+        let conversation_manager = ConversationManager::new_with_storage(100, Path::new(&project_directory));
         
         Self {
             project_directory,
@@ -191,58 +189,64 @@ impl eframe::App for App {
                 });
             });
         
-        // Right panel - Feedback input
+        // Right panel - Feedback input with fixed layout
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Interactive Feedback MCP");
-            ui.add_space(10.0);
+            // Use vertical layout with fixed height for main content
+            ui.vertical(|ui| {
+                ui.heading("Interactive Feedback MCP");
+                ui.add_space(10.0);
 
-            // Project information
-            ui.group(|ui| {
-                ui.heading("Project Information");
-                ui.label(format!("Project: {}", self.project_directory));
-                ui.label(format!("Summary: {}", self.summary));
-            });
+                // Scrollable content area with fixed height
+                egui::ScrollArea::vertical()
+                    .max_height(ui.available_height() - 120.0) // Reserve space for buttons
+                    .show(ui, |ui| {
+                        // Project information
+                        ui.group(|ui| {
+                            ui.heading("Project Information");
+                            ui.label(format!("Project: {}", self.project_directory));
+                            ui.label(format!("Summary: {}", self.summary));
+                        });
 
-            ui.add_space(10.0);
+                        ui.add_space(10.0);
 
-            // Cursor context information
-            if let Some(context) = &self.cursor_context {
-                ui.group(|ui| {
-                    ui.heading("Cursor MCP Context");
-                    ui.label(format!("Tool: {}", context.tool_name));
-                    ui.label(format!("Method: {}", context.method));
-                    ui.label(format!("Request ID: {}", context.request_id));
-                    ui.label(format!("Timestamp: {}", context.timestamp));
-                    ui.label("Arguments:");
-                    ui.code(format!("{}", context.arguments));
-                });
-            }
+                        // Cursor context information
+                        if let Some(context) = &self.cursor_context {
+                            ui.group(|ui| {
+                                ui.heading("Cursor MCP Context");
+                                ui.label(format!("Tool: {}", context.tool_name));
+                                ui.label(format!("Method: {}", context.method));
+                                ui.label(format!("Request ID: {}", context.request_id));
+                                ui.label(format!("Timestamp: {}", context.timestamp));
+                                ui.label("Arguments:");
+                                ui.code(format!("{}", context.arguments));
+                            });
+                            ui.add_space(10.0);
+                        }
 
-            ui.add_space(10.0);
+                        // Feedback input section
+                        ui.group(|ui| {
+                            ui.heading("Your Feedback");
+                            ui.label("Please provide your feedback:");
+                            
+                            // Fixed height text input
+                            ui.add_sized(
+                                [ui.available_width(), 200.0], // Fixed height
+                                egui::TextEdit::multiline(&mut self.feedback)
+                                    .hint_text("Enter your feedback here...\n\nSupports multiline text.\nUse Ctrl+Enter to submit.")
+                                    .font(egui::TextStyle::Body)
+                            );
+                        });
+                    });
 
-            // Feedback input
-            ui.group(|ui| {
-                ui.heading("Your Feedback");
-                ui.label("Please provide your feedback:");
+                // Fixed bottom section with buttons
+                ui.add_space(10.0);
                 
-                // Improved multiline text input
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.add_sized(
-                        [ui.available_width(), 300.0],
-                        egui::TextEdit::multiline(&mut self.feedback)
-                            .hint_text("Enter your feedback here...\n\nSupports multiline text.\nUse Ctrl+Enter to submit.")
-                            .font(egui::TextStyle::Body)
-                    );
-                });
-
                 // Error message
                 if let Some(error) = &self.error_message {
                     ui.colored_label(egui::Color32::RED, error);
                 }
 
-                ui.add_space(10.0);
-
-                // Buttons
+                // Buttons - always visible at bottom
                 ui.horizontal(|ui| {
                     if ui.button("Submit Feedback").clicked() {
                         self.submit_feedback();
@@ -271,30 +275,18 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut project_directory = "Unknown Project".to_string();
     let mut summary = "No summary provided".to_string();
-    let mut cursor_context: Option<CursorContext> = None;
+    let cursor_context: Option<CursorContext> = None;
 
-    let mut i = 1;
-    while i < args.len() {
-        if args[i] == "--project-directory" {
-            if let Some(dir) = args.get(i + 1) {
-                project_directory = dir.clone();
-                i += 1;
-            }
-        } else if args[i] == "--summary" {
-            if let Some(s) = args.get(i + 1) {
-                summary = s.clone();
-                i += 1;
-            }
-        } else if args[i] == "--cursor-context" {
-            if let Some(context_str) = args.get(i + 1) {
-                if let Ok(context) = serde_json::from_str::<CursorContext>(context_str) {
-                    cursor_context = Some(context);
-                }
-                i += 1;
-            }
-        }
-        i += 1;
+    // Simple argument parsing: first arg is project directory, second is summary
+    if args.len() > 1 {
+        project_directory = args[1].clone();
     }
+    if args.len() > 2 {
+        summary = args[2].clone();
+    }
+
+    println!("egui GUI started with project: {}", project_directory);
+    println!("egui GUI started with summary: {}", summary);
 
     // Initialize logging
     env_logger::init();
@@ -312,7 +304,7 @@ fn main() {
         ..Default::default()
     };
 
-    eframe::run_native(
+    let _ = eframe::run_native(
         "Interactive Feedback MCP",
         options,
         Box::new(|cc| {

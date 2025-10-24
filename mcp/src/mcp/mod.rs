@@ -5,4 +5,3 @@ pub mod protocol;
 
 // Re-export
 pub use server::*;
-pub use protocol::*;

@@ -2,7 +2,6 @@
 
 use std::path::PathBuf;
 use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 
 use crate::traits::{SettingsManager, SettingsError};
 use crate::models::{AppSettings, ProjectSettings};

@@ -11,6 +11,7 @@ pub struct Feedback {
     pub summary: String,
     pub command_logs: String,
     pub interactive_feedback: String,
+    pub conversation_history: String,
     pub timestamp: SystemTime,
     pub metadata: FeedbackMetadata,
 }
@@ -43,6 +44,7 @@ impl Feedback {
             summary,
             command_logs: String::new(),
             interactive_feedback: String::new(),
+            conversation_history: String::new(),
             timestamp: SystemTime::now(),
             metadata: FeedbackMetadata::default(),
         }
@@ -71,5 +73,10 @@ impl Feedback {
     /// Set user interaction time
     pub fn set_user_interaction_time(&mut self, duration: Duration) {
         self.metadata.user_interaction_time = duration;
+    }
+    
+    /// Set conversation history
+    pub fn set_conversation_history(&mut self, history: String) {
+        self.conversation_history = history;
     }
 }

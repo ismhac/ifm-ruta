@@ -26,15 +26,6 @@ cd ..
 
 echo "Build completed successfully!"
 
-# Create distribution directory
-echo "Creating distribution..."
-mkdir -p dist
-
-# Copy binaries
-cp target/release/ifm-ruta-mcp dist/
-cp target/release/ifm-ruta-egui dist/
-
-echo "Distribution created in ./dist/"
-echo "Binaries:"
+echo "Binaries available in target/release/:"
 echo "  - ifm-ruta-mcp: MCP server"
 echo "  - ifm-ruta-egui: egui application"

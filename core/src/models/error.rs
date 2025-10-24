@@ -34,6 +34,15 @@ pub enum AppError {
     
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+    
+    #[error("Storage error: {message}")]
+    StorageError { message: String },
+    
+    #[error("Serialization error: {message}")]
+    SerializationError { message: String },
+    
+    #[error("Deserialization error: {message}")]
+    DeserializationError { message: String },
 }
 
 /// Result type for core operations

@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "ifm-ruta-core",
-    "ifm-ruta-mcp",
-    "ifm-ruta-egui",
+    "core",
+    "mcp",
+    "egui",
 ]
 resolver = "2"
 

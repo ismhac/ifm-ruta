@@ -1,13 +1,13 @@
-# Interactive Feedback MCP - Rust + Tauri
+# Interactive Feedback MCP - Rust + egui
 
-A high-performance, cross-platform MCP (Model Context Protocol) server for interactive feedback in AI-assisted development, built with Rust and Tauri.
+A high-performance, cross-platform MCP (Model Context Protocol) server for interactive feedback in AI-assisted development, built with Rust and egui.
 
 ## Features
 
 - **MCP Protocol**: Full MCP protocol implementation with `interactive_feedback` tool
 - **Cross-platform**: Native UI on Windows, macOS, and Linux
 - **High Performance**: 3-5x faster startup, 50% less memory usage than Python version
-- **Modern UI**: Clean, responsive interface built with Tauri
+- **Modern UI**: Clean, responsive interface built with egui
 - **Command Execution**: Run commands with real-time output
 - **Settings Management**: Project-specific configuration
 - **Extension System**: Plugin architecture for future enhancements
@@ -21,22 +21,21 @@ A high-performance, cross-platform MCP (Model Context Protocol) server for inter
 - **Extension Points**: Plugin system for future enhancements
 
 ### Components
-- **ifm-ruta-core**: Core system with traits, models, and services
-- **ifm-ruta-mcp**: MCP server implementation
-- **ifm-ruta-tauri**: Tauri application with UI
+- **core**: Core system with traits, models, and services
+- **mcp**: MCP server implementation
+- **egui**: egui application with native GUI
 
 ## Quick Start
 
 ### Prerequisites
 - Rust 1.70+
-- Node.js 16+ (for Tauri frontend)
 - Git
 
 ### Installation
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-org/ifm-ruta.git
+   git clone https://github.com/ismhac/ifm-ruta.git
    cd ifm-ruta
    ```
 
@@ -82,20 +81,19 @@ The MCP server provides the `interactive_feedback` tool:
 ### Project Structure
 ```
 ifm-ruta/
-├── ifm-ruta-core/          # Core system
+├── core/                   # Core system
 │   ├── src/
 │   │   ├── traits/         # Core interfaces
 │   │   ├── models/         # Data models
 │   │   ├── services/       # Core services
 │   │   └── utils/         # Utilities
-├── ifm-ruta-mcp/          # MCP server
+├── mcp/                   # MCP server
 │   ├── src/
 │   │   ├── mcp/           # MCP protocol
 │   │   └── tools/         # MCP tools
-├── ifm-ruta-tauri/        # Tauri application
-│   ├── src/               # Rust backend
-│   ├── src-tauri/         # Tauri configuration
-│   └── ui/                # Frontend
+├── egui/                  # egui application
+│   ├── src/               # Rust GUI
+│   └── fonts/             # Vietnamese fonts
 └── docs/                  # Documentation
 ```
 
@@ -108,7 +106,7 @@ ifm-ruta/
 # Build individual components
 cargo build --release --package ifm-ruta-core
 cargo build --release --package ifm-ruta-mcp
-cargo build --release --package ifm-ruta-tauri
+cargo build --release --package ifm-ruta-egui
 ```
 
 ### Testing

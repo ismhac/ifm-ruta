@@ -8,19 +8,19 @@ echo "Building Interactive Feedback MCP..."
 
 # Build core library
 echo "Building core library..."
-cd ifm-ruta-core
+cd core
 cargo build --release
 cd ..
 
 # Build MCP server
 echo "Building MCP server..."
-cd ifm-ruta-mcp
+cd mcp
 cargo build --release
 cd ..
 
-# Build Tauri application
-echo "Building Tauri application..."
-cd ifm-ruta-tauri
+# Build egui application
+echo "Building egui application..."
+cd egui
 cargo build --release
 cd ..
 
@@ -32,9 +32,9 @@ mkdir -p dist
 
 # Copy binaries
 cp target/release/ifm-ruta-mcp dist/
-cp target/release/ifm-ruta-tauri dist/
+cp target/release/ifm-ruta-egui dist/
 
 echo "Distribution created in ./dist/"
 echo "Binaries:"
 echo "  - ifm-ruta-mcp: MCP server"
-echo "  - ifm-ruta-tauri: Tauri application"
+echo "  - ifm-ruta-egui: egui application"

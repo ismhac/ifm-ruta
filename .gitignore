@@ -17,6 +17,30 @@ Cargo.lock
 *.so
 *.dylib
 
+# Release artifacts
+dist/
+*.zip
+*.tar.gz
+*.rpm
+*.deb
+*.dmg
+*.msi
+
+# Build artifacts
+ifm-ruta-*/
+ifm-ruta-*.tar.gz
+ifm-ruta-*.spec
+ifm-ruta-*.spec-*
+
+# RPM build directories
+ifm-ruta-*-build/
+BUILD/
+BUILDROOT/
+RPMS/
+SRPMS/
+SPECS/
+SOURCES/
+
 # Logs and temporary files
 *.log
 /tmp/
@@ -52,5 +76,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Documentation (keep only essential docs)
 docs/
 .ifm-ruta/
+
+# Cross-compilation artifacts
+*.pdb
+*.ilk

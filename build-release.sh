@@ -116,9 +116,11 @@ mkdir -p \$RPM_BUILD_ROOT/usr/bin
 mkdir -p \$RPM_BUILD_ROOT/usr/share/doc/ifm-ruta
 mkdir -p \$RPM_BUILD_ROOT/usr/share/licenses/ifm-ruta
 
-# Install binaries
-install -m 755 target/x86_64-unknown-linux-gnu/release/ifm-ruta-mcp \$RPM_BUILD_ROOT/usr/bin/
-install -m 755 target/x86_64-unknown-linux-gnu/release/ifm-ruta-egui \$RPM_BUILD_ROOT/usr/bin/
+        # Install binaries (copy from build directory)
+        cp /home/ismverseinfinity/workspaces/mcp/ifm-ruta/target/x86_64-unknown-linux-gnu/release/ifm-ruta-mcp \$RPM_BUILD_ROOT/usr/bin/
+        cp /home/ismverseinfinity/workspaces/mcp/ifm-ruta/target/x86_64-unknown-linux-gnu/release/ifm-ruta-egui \$RPM_BUILD_ROOT/usr/bin/
+        chmod +x \$RPM_BUILD_ROOT/usr/bin/ifm-ruta-mcp
+        chmod +x \$RPM_BUILD_ROOT/usr/bin/ifm-ruta-egui
 
 # Install documentation
 install -m 644 README.md \$RPM_BUILD_ROOT/usr/share/doc/ifm-ruta/
@@ -137,21 +139,24 @@ install -m 644 LICENSE \$RPM_BUILD_ROOT/usr/share/licenses/ifm-ruta/
 EOF
 
         # Create source tarball
-        tar -czf ifm-ruta-${VERSION}.tar.gz \
-          --exclude='.git' \
-          --exclude='target' \
-          --exclude='.github' \
-          --exclude='*.rpm' \
-          --exclude='dist' \
-          .
+        mkdir -p ifm-ruta-${VERSION}
+        cp -r * ifm-ruta-${VERSION}/ 2>/dev/null || true
+        cp -r .cargo ifm-ruta-${VERSION}/ 2>/dev/null || true
+        cd ifm-ruta-${VERSION}
+        rm -rf .git target .github dist *.rpm ifm-ruta-*.tar.gz
+        cd ..
+        tar -czf ifm-ruta-${VERSION}.tar.gz ifm-ruta-${VERSION}/
+        rm -rf ifm-ruta-${VERSION}
 
-        # Build RPM
+        # Build RPM (disable debug package)
         rpmbuild -bb ifm-ruta.spec \
           --define "_sourcedir $(pwd)" \
           --define "_rpmdir $(pwd)/dist" \
           --define "_builddir $(pwd)" \
           --define "_specdir $(pwd)" \
-          --define "_srcrpmdir $(pwd)/dist"
+          --define "_srcrpmdir $(pwd)/dist" \
+          --define "debug_package %{nil}" \
+          --define "debugsource_package %{nil}"
 
         echo -e "${GREEN}Fedora x86_64 RPM build complete: dist/ifm-ruta-${VERSION}-1.x86_64.rpm${NC}"
     fi

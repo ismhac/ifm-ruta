@@ -1,0 +1,33 @@
+[package]
+name = "ifm-ruta-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core system for Interactive Feedback MCP"
+
+[dependencies]
+# Core dependencies
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+toml.workspace = true
+
+# Async utilities
+futures.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Process management
+sysinfo.workspace = true
+
+# Serialization
+serde_yaml = "0.9"

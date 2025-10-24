@@ -1,0 +1,47 @@
+[workspace]
+members = [
+    "ifm-ruta-core",
+    "ifm-ruta-mcp",
+    "ifm-ruta-egui",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+repository = "https://github.com/your-org/ifm-ruta"
+description = "Interactive Feedback MCP - Rust + egui implementation"
+
+[workspace.dependencies]
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros", "sync", "process", "io-util", "io-std"] }
+anyhow = "1.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+toml = "0.8"
+
+# MCP dependencies
+mcp = "0.1.0"
+
+# GUI dependencies
+eframe = "0.28"
+egui = "0.28"
+
+# Process management
+sysinfo = "0.30"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Async utilities
+futures = "0.3"
+
+# Serialization
+serde_yaml = "0.9"

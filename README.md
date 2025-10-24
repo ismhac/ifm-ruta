@@ -89,6 +89,42 @@ The MCP server provides the `interactive_feedback` tool with conversation histor
 - **Memory Management**: Keeps 100 conversations in memory, unlimited storage
 - **Cleanup Tools**: Built-in cleanup for old conversation sessions
 
+## Installation
+
+### Unified Packages (Recommended)
+
+**Windows:**
+1. Download `ifm-ruta-windows-x64-1.0.0.zip` from [Releases](https://github.com/ismhac/ifm-ruta/releases)
+2. Extract the ZIP file
+3. Run `install.bat` as Administrator
+4. Both `ifm-ruta-mcp.exe` and `ifm-ruta-egui.exe` will be installed to `C:\Program Files\ifm-ruta\`
+
+**Fedora/Linux:**
+1. Download `ifm-ruta-fedora-x86_64-1.0.0.tar.gz` from [Releases](https://github.com/ismhac/ifm-ruta/releases)
+2. Extract: `tar -xzf ifm-ruta-fedora-x86_64-1.0.0.tar.gz`
+3. Run: `cd ifm-ruta-fedora-x86_64-1.0.0 && sudo ./install.sh`
+4. Both binaries will be installed to `/opt/ifm-ruta/` with symlinks in `/usr/bin/`
+
+### From Source
+
+```bash
+git clone https://github.com/ismhac/ifm-ruta.git
+cd ifm-ruta
+cargo build --release
+```
+
+### Individual Binaries
+
+Download individual binaries from [Releases](https://github.com/ismhac/ifm-ruta/releases) if you prefer manual installation.
+
+**Windows:**
+- `ifm-ruta-mcp.exe` - MCP server
+- `ifm-ruta-egui.exe` - GUI application
+
+**Linux:**
+- `ifm-ruta-mcp` - MCP server  
+- `ifm-ruta-egui` - GUI application
+
 ## Development
 
 ### Project Structure

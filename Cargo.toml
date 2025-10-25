@@ -1,18 +1,17 @@
 [workspace]
 members = [
     "core",
-    "mcp",
-    "egui",
+    "unified",
 ]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["IFM-Ruta Contributors"]
 license = "MIT"
-repository = "https://github.com/your-org/ifm-ruta"
-description = "Interactive Feedback MCP - Rust + egui implementation"
+repository = "https://github.com/ismhac/ifm-ruta"
+description = "Interactive Feedback MCP - Unified Rust implementation"
 
 [workspace.dependencies]
 # Core dependencies

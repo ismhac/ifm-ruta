@@ -45,43 +45,19 @@ impl InteractiveFeedbackTool {
     
     /// Run interactive feedback with egui GUI (Rust native)
     fn run_interactive_feedback_with_gui(&self, project_directory: &str, prompt: &str) -> Result<String, ToolError> {
-        // Find the egui binary (ifm-ruta-egui)
+        // Use the current unified executable for GUI mode
         let current_exe = std::env::current_exe()
             .map_err(|e| ToolError::ExecutionError {
                 message: format!("Failed to get executable path: {}", e),
             })?;
         
-        let exe_dir = current_exe.parent()
-            .ok_or_else(|| ToolError::ExecutionError {
-                message: "Failed to get executable directory".to_string(),
-            })?;
-        
-        // Look for ifm-ruta-egui binary in the same directory
-        let egui_binary = exe_dir.join("ifm-ruta-egui");
-        let egui_path = if egui_binary.exists() {
-            egui_binary
-        } else {
-            // Try alternative path (parent directory)
-            exe_dir.parent()
-                .ok_or_else(|| ToolError::ExecutionError {
-                    message: "Failed to get parent directory".to_string(),
-                })?
-                .join("ifm-ruta-egui")
-        };
-        
-        if !egui_path.exists() {
-            return Err(ToolError::ExecutionError {
-                message: "egui binary not found. Please ensure ifm-ruta-egui is built and in the project directory.".to_string(),
-            });
-        }
-        
-        // Run egui GUI with project directory and prompt as arguments
-        let output = Command::new(egui_path.to_str().unwrap())
+        // Run unified executable in GUI mode with project directory and prompt as arguments
+        let output = Command::new(current_exe)
             .arg(project_directory)
             .arg(prompt)
             .output()
             .map_err(|e| ToolError::ExecutionError {
-                message: format!("Failed to run egui GUI: {}", e),
+                message: format!("Failed to run GUI: {}", e),
             })?;
         
         if !output.status.success() {
@@ -94,14 +70,10 @@ impl InteractiveFeedbackTool {
         Ok(user_feedback)
     }
     
-    /// Save real conversation to storage
+    /// Save real conversation to storage - append to current conversation only
     fn save_real_conversation(&self, project_directory: &str, previous_user_request: &str, prompt: &str) -> Result<(), ToolError> {
         use std::path::Path;
         use ifm_ruta_core::services::ConversationStorage;
-        use ifm_ruta_core::ConversationSession;
-        use ifm_ruta_core::ConversationMessage;
-        use uuid::Uuid;
-        use chrono::Utc;
         
         // Setup project directory with .gitignore and README
         self.setup_project_directory(project_directory)?;
@@ -112,42 +84,27 @@ impl InteractiveFeedbackTool {
                 message: format!("Failed to initialize storage: {}", e),
             })?;
         
-        // Create conversation session
-        let session_id = format!("cursor-chat-{}", Uuid::new_v4().to_string()[..8].to_string());
-        let now = Utc::now().to_rfc3339();
+        // Clean up old conversation files, keep only current conversation
+        let _ = storage.cleanup_old_sessions(1); // Keep only 1 session (current)
         
-        let mut messages = Vec::new();
+        // Use fixed session ID for current conversation only
+        let session_id = "current-conversation";
         
-        // Add user message
+        // Add user message if not empty
         if !previous_user_request.is_empty() {
-            messages.push(ConversationMessage {
-                role: "user".to_string(),
-                content: previous_user_request.to_string(),
-                timestamp: now.clone(),
-            });
+            storage.add_message(session_id, "user", previous_user_request)
+                .map_err(|e| ToolError::ExecutionError {
+                    message: format!("Failed to add user message: {}", e),
+                })?;
         }
         
         // Add assistant message
-        messages.push(ConversationMessage {
-            role: "assistant".to_string(),
-            content: prompt.to_string(),
-            timestamp: now.clone(),
-        });
-        
-        let session = ConversationSession {
-            session_id: session_id.clone(),
-            project_directory: Path::new(project_directory).to_path_buf(),
-            messages,
-            created_at: now.clone(),
-            last_updated: now,
-        };
-        
-        storage.save_session(&session)
+        storage.add_message(session_id, "assistant", prompt)
             .map_err(|e| ToolError::ExecutionError {
-                message: format!("Failed to save conversation: {}", e),
+                message: format!("Failed to add assistant message: {}", e),
             })?;
         
-        println!("Saved real conversation to storage: {}", session_id);
+        println!("Added messages to current conversation: {}", session_id);
         Ok(())
     }
     

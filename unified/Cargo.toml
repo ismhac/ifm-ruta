@@ -1,14 +1,14 @@
 [package]
-name = "ifm-ruta-mcp"
+name = "ifm-ruta-unified"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "MCP server for Interactive Feedback MCP"
+description = "Unified IFM-Ruta application with both GUI and MCP server"
 
 [[bin]]
-name = "ifm-ruta-mcp"
+name = "ifm-ruta"
 path = "src/main.rs"
 
 [dependencies]
@@ -25,9 +25,24 @@ chrono.workspace = true
 # MCP dependencies
 mcp = "0.1.0"
 
-# Logging
-tracing.workspace = true
-tracing-subscriber.workspace = true
+# GUI dependencies
+eframe = "0.28"
+egui = "0.28"
 
 # Process management
 sysinfo.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+log = "0.4"
+env_logger = "0.11"
+
+# Font support
+include_dir = "0.7"
+
+# Async utilities
+futures.workspace = true
+
+# Serialization
+serde_yaml.workspace = true

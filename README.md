@@ -13,19 +13,6 @@ A high-performance, cross-platform MCP (Model Context Protocol) server for inter
 - **Storage Management**: Conversation cleanup and statistics
 - **Git Integration**: Automatic `.ifm-ruta/` directory exclusion from version control
 
-## Architecture
-
-### Core System
-- **Minimal Dependencies**: Core system with minimal external dependencies
-- **Stable Interfaces**: Well-defined trait-based interfaces
-- **Single Responsibility**: Clear separation of concerns
-- **Extension Points**: Plugin system for future enhancements
-
-### Components
-- **core**: Core system with traits, models, and services
-- **mcp**: MCP server implementation
-- **egui**: egui application with native GUI
-
 ## Quick Start
 
 ### Prerequisites
@@ -42,7 +29,7 @@ A high-performance, cross-platform MCP (Model Context Protocol) server for inter
 
 2. **Build the project**:
    ```bash
-   ./build.sh
+   ./scripts/build.sh
    ```
 
 3. **Configure MCP server**:
@@ -51,8 +38,8 @@ A high-performance, cross-platform MCP (Model Context Protocol) server for inter
    {
      "mcpServers": {
        "rust-mcp": {
-         "command": "/path/to/ifm-ruta/target/release/ifm-ruta-mcp",
-         "args": [],
+         "command": "/path/to/ifm-ruta/target/release/ifm-ruta",
+         "args": ["--mcp-server"],
          "timeout": 10,
          "env": {
            "RUST_LOG": "debug"
@@ -81,53 +68,72 @@ The MCP server provides the `interactive_feedback` tool with conversation histor
 }
 ```
 
-#### Features
+## Build Options
 
-- **Real Conversation History**: Displays actual user-assistant conversations from Cursor
-- **Auto-Setup**: Automatically creates `.ifm-ruta/` directory with README and updates `.gitignore`
-- **Storage Management**: Stores conversations as JSON files with session tracking
-- **Memory Management**: Keeps 100 conversations in memory, unlimited storage
-- **Cleanup Tools**: Built-in cleanup for old conversation sessions
-
-## Installation
-
-### Unified Packages (Recommended)
-
-**Windows:**
-1. Download `ifm-ruta-windows-x64-1.0.0.zip` from [Releases](https://github.com/ismhac/ifm-ruta/releases)
-2. Extract the ZIP file
-3. Run `install.bat` as Administrator
-4. Both `ifm-ruta-mcp.exe` and `ifm-ruta-egui.exe` will be installed to `C:\Program Files\ifm-ruta\`
-
-**Fedora/Linux:**
-1. Download `ifm-ruta-fedora-x86_64-1.0.0.tar.gz` from [Releases](https://github.com/ismhac/ifm-ruta/releases)
-2. Extract: `tar -xzf ifm-ruta-fedora-x86_64-1.0.0.tar.gz`
-3. Run: `cd ifm-ruta-fedora-x86_64-1.0.0 && sudo ./install.sh`
-4. Both binaries will be installed to `/opt/ifm-ruta/` with symlinks in `/usr/bin/`
-
-### From Source
+### Unified Build (Recommended)
+Creates a single executable that can run in both MCP server and GUI modes:
 
 ```bash
-git clone https://github.com/ismhac/ifm-ruta.git
-cd ifm-ruta
-cargo build --release
+# Build unified executable
+./scripts/build.sh --unified
+
+# Usage:
+./target/release/ifm-ruta --mcp-server    # MCP server mode
+./target/release/ifm-ruta <dir> [summary] # GUI mode
 ```
 
-### Individual Binaries
+### Windows Build
+Creates Windows .exe files for distribution:
 
-Download individual binaries from [Releases](https://github.com/ismhac/ifm-ruta/releases) if you prefer manual installation.
+```bash
+# Build Windows executables
+./scripts/build.sh --windows
 
-**Windows:**
-- `ifm-ruta-mcp.exe` - MCP server
-- `ifm-ruta-egui.exe` - GUI application
+# Creates:
+# target/x86_64-pc-windows-gnu/release/ifm-ruta.exe  (64-bit)
+# target/i686-pc-windows-gnu/release/ifm-ruta.exe    (32-bit)
+```
 
-**Linux:**
-- `ifm-ruta-mcp` - MCP server  
-- `ifm-ruta-egui` - GUI application
+### Standard Build
+Builds all components separately:
 
-## Development
+```bash
+# Build all components
+./scripts/build.sh
 
-### Project Structure
+# Creates:
+# target/release/ifm-ruta    # Unified executable
+```
+
+## Windows Distribution
+
+For Windows users, we provide a complete distribution package:
+
+1. **Build Windows package**:
+   ```bash
+   ./scripts/build-windows.sh
+   ./scripts/create-windows-package.sh
+   ```
+
+2. **Download**: `ifm-ruta-windows-v0.1.0.zip` (5.8MB)
+
+3. **Installation**: Extract and run - no additional dependencies required
+
+See [WINDOWS_INSTALLATION.md](WINDOWS_INSTALLATION.md) for detailed Windows setup instructions.
+
+## Architecture
+
+### Core System
+- **Minimal Dependencies**: Core system with minimal external dependencies
+- **Stable Interfaces**: Well-defined trait-based interfaces
+- **Single Responsibility**: Clear separation of concerns
+- **Extension Points**: Plugin system for future enhancements
+
+### Components
+- **core**: Core system with traits, models, and services
+- **unified**: Unified executable with both MCP and GUI functionality
+
+## Project Structure
 ```
 ifm-ruta/
 ├── core/                   # Core system
@@ -136,26 +142,40 @@ ifm-ruta/
 │   │   ├── models/         # Data models
 │   │   ├── services/       # Core services
 │   │   └── utils/         # Utilities
-├── mcp/                   # MCP server
+├── unified/                # Unified executable
 │   ├── src/
 │   │   ├── mcp/           # MCP protocol
 │   │   └── tools/         # MCP tools
-├── egui/                  # egui application
-│   ├── src/               # Rust GUI
-│   └── fonts/             # Vietnamese fonts
-└── docs/                  # Documentation
+├── scripts/                # Build and utility scripts
+│   ├── build.sh           # Main build script
+│   ├── build-unified.sh   # Unified build script
+│   ├── build-windows.sh   # Windows build script
+│   ├── create-windows-package.sh
+│   ├── test-mcp.sh        # MCP testing script
+│   ├── debug-mcp.sh       # MCP debugging script
+│   └── restart-mcp.sh     # MCP restart script
+├── README.md              # This file
+├── WINDOWS_INSTALLATION.md # Windows setup guide
+└── LICENSE                # MIT License
 ```
+
+## Development
 
 ### Building
 
 ```bash
 # Build all components
-./build.sh
+./scripts/build.sh
+
+# Build unified executable
+./scripts/build.sh --unified
+
+# Build Windows executables
+./scripts/build.sh --windows
 
 # Build individual components
 cargo build --release --package ifm-ruta-core
-cargo build --release --package ifm-ruta-mcp
-cargo build --release --package ifm-ruta-egui
+cargo build --release --package ifm-ruta-unified
 ```
 
 ### Testing
@@ -164,11 +184,11 @@ cargo build --release --package ifm-ruta-egui
 # Run tests
 cargo test --workspace
 
-# Run MCP server tests
-cargo test --package ifm-ruta-mcp
+# Test MCP server
+./scripts/test-mcp.sh
 
-# Run Tauri tests
-cargo test --package ifm-ruta-tauri
+# Debug MCP connection
+./scripts/debug-mcp.sh
 ```
 
 ## Conversation Storage
@@ -182,8 +202,7 @@ project/
 ├── .ifm-ruta/
 │   ├── README.md              # Explains the directory purpose
 │   └── conversations/         # Conversation storage
-│       ├── cursor-chat-abc123.json
-│       ├── cursor-chat-def456.json
+│       ├── current-conversation.json
 │       └── ...
 └── .gitignore                 # Updated to exclude .ifm-ruta/
 ```
@@ -214,15 +233,6 @@ The MCP server can be configured through environment variables:
 - `IFM_RUTA_TIMEOUT`: Timeout for user interaction (seconds)
 - `IFM_RUTA_CONFIG_DIR`: Custom configuration directory
 
-### Tauri Application Configuration
-
-The Tauri application supports various configuration options:
-
-- **Window Settings**: Size, position, state
-- **Theme**: Light, dark, or auto
-- **Command Execution**: Allowed commands, sandbox mode
-- **Performance**: Memory limits, cache size
-
 ## API Reference
 
 ### MCP Tools
@@ -232,19 +242,14 @@ The Tauri application supports various configuration options:
 Request interactive feedback for a project.
 
 **Input**:
-- `project_directory` (string): Full path to the project directory
-- `summary` (string): Brief summary of changes made
+- `projectDirectory` (string): Full path to the project directory
+- `prompt` (string): The prompt to show to the user
+- `previousUserRequest` (string): The previous user request that triggered this interactive feedback
 
 **Output**:
 - `command_logs` (string): Output from executed commands
 - `interactive_feedback` (string): User-provided feedback
-
-### Tauri Commands
-
-- `submit_feedback(feedback: string)`: Submit user feedback
-- `execute_command(command: string, args: string[])`: Execute a command
-- `get_settings()`: Get application settings
-- `set_settings(settings: AppSettings)`: Set application settings
+- `conversation_history` (array): Conversation history in JSON format
 
 ## Performance
 
@@ -272,6 +277,45 @@ Request interactive feedback for a project.
 - **Permission System**: Fine-grained access control
 - **Data Protection**: Secure handling of sensitive data
 
+## Troubleshooting
+
+### MCP Connection Issues
+
+1. **Check MCP server**:
+   ```bash
+   ./scripts/test-mcp.sh
+   ```
+
+2. **Debug connection**:
+   ```bash
+   ./scripts/debug-mcp.sh
+   ```
+
+3. **Restart MCP**:
+   ```bash
+   ./scripts/restart-mcp.sh
+   ```
+
+4. **Common solutions**:
+   - Restart Cursor completely
+   - Check file permissions: `chmod +x target/release/ifm-ruta`
+   - Verify MCP configuration path
+   - Check Cursor MCP logs in Developer Tools
+
+### Build Issues
+
+1. **Clean build**:
+   ```bash
+   cargo clean
+   ./scripts/build.sh --unified
+   ```
+
+2. **Check dependencies**:
+   ```bash
+   rustup update
+   cargo update
+   ```
+
 ## Contributing
 
 1. Fork the repository
@@ -286,6 +330,8 @@ Request interactive feedback for a project.
 - Write comprehensive tests
 - Document public APIs
 - Follow the established architecture patterns
+- Keep source code clean and well-organized
+- Use English for all documentation and comments
 
 ## License
 
@@ -294,7 +340,5 @@ MIT License - see LICENSE file for details.
 ## Acknowledgments
 
 - Inspired by the original [interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)
-- Built with [Rust](https://www.rust-lang.org/) and [Tauri](https://tauri.app/)
+- Built with [Rust](https://www.rust-lang.org/) and [egui](https://github.com/emilk/egui)
 - Uses [MCP protocol](https://modelcontextprotocol.io/) for AI tool integration
-
-

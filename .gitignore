@@ -8,7 +8,6 @@
 
 # Rust build artifacts
 target/
-Cargo.lock
 **/*.rs.bk
 
 # Distribution and binaries
@@ -46,7 +45,7 @@ SOURCES/
 /tmp/
 *.tmp
 
-# Interactive Feedback MCP Configuration (deprecated - now using in-memory)
+# Interactive Feedback MCP Configuration
 .interactive-feedback-config.json
 
 # OS generated files
@@ -58,28 +57,9 @@ SOURCES/
 ehthumbs.db
 Thumbs.db
 
-# Node.js (for MCP server)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Python (if any)
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Documentation (keep only essential docs)
-docs/
-.ifm-ruta/
-
 # Cross-compilation artifacts
 *.pdb
 *.ilk
+
+# Project-specific
+.ifm-ruta/

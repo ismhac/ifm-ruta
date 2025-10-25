@@ -162,15 +162,18 @@ impl ConversationStorage {
         Ok(sessions)
     }
     
-    /// Add a message to a conversation session
+    /// Add a message to a conversation session - append to existing or create new
     pub fn add_message(&self, session_id: &str, role: &str, content: &str) -> Result<(), AppError> {
         let mut session = self.load_session(session_id)?
-            .unwrap_or_else(|| ConversationSession {
-                session_id: session_id.to_string(),
-                project_directory: self.storage_dir.parent().unwrap().to_path_buf(),
-                messages: Vec::new(),
-                created_at: chrono::Utc::now().to_rfc3339(),
-                last_updated: chrono::Utc::now().to_rfc3339(),
+            .unwrap_or_else(|| {
+                // Create new session only if it doesn't exist
+                ConversationSession {
+                    session_id: session_id.to_string(),
+                    project_directory: self.storage_dir.parent().unwrap().to_path_buf(),
+                    messages: Vec::new(),
+                    created_at: chrono::Utc::now().to_rfc3339(),
+                    last_updated: chrono::Utc::now().to_rfc3339(),
+                }
             });
         
         let message = ConversationMessage {

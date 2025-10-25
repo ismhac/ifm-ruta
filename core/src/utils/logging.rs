@@ -1,7 +1,6 @@
 //! Logging utilities
 
 use tracing::Level;
-use tracing_subscriber::util::SubscriberInitExt;
 
 /// Initialize logging
 pub fn init_logging(level: Level) -> Result<(), LoggingError> {

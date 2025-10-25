@@ -338,7 +338,10 @@ impl eframe::App for App {
                                             _ => eframe::egui::Color32::from_rgb(200, 200, 200),
                                         };
 
-                                        ui.colored_label(role_color, entry.role.to_uppercase());
+                                        ui.colored_label(
+                                            role_color,
+                                            entry.role.to_uppercase(),
+                                        );
                                         ui.with_layout(
                                             eframe::egui::Layout::right_to_left(
                                                 eframe::egui::Align::Center,

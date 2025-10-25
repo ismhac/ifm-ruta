@@ -5,65 +5,65 @@
 
 set -e
 
-echo "🔍 Running Pre-Push CI Checks..."
-echo "================================"
+echo "Running Pre-Push CI Checks..."
+echo "=============================="
 
 # Change to project directory
 cd "$(dirname "$0")/.."
 
 echo ""
-echo "1️⃣ Checking code formatting..."
+echo "1. Checking code formatting..."
 if cargo fmt --all -- --check; then
-    echo "✅ Formatting check passed"
+    echo "OK: Formatting check passed"
 else
-    echo "❌ Formatting check failed"
-    echo "💡 Run: cargo fmt --all"
+    echo "ERROR: Formatting check failed"
+    echo "TIP: Run: cargo fmt --all"
     exit 1
 fi
 
 echo ""
-echo "2️⃣ Running clippy lints..."
+echo "2. Running clippy lints..."
 if cargo clippy --all-targets --all-features -- -D warnings; then
-    echo "✅ Clippy check passed"
+    echo "OK: Clippy check passed"
 else
-    echo "❌ Clippy check failed"
-    echo "💡 Fix the warnings above"
+    echo "ERROR: Clippy check failed"
+    echo "TIP: Fix the warnings above"
     exit 1
 fi
 
 echo ""
-echo "3️⃣ Running tests..."
+echo "3. Running tests..."
 if cargo test --workspace; then
-    echo "✅ Tests passed"
+    echo "OK: Tests passed"
 else
-    echo "❌ Tests failed"
-    echo "💡 Fix the failing tests"
+    echo "ERROR: Tests failed"
+    echo "TIP: Fix the failing tests"
     exit 1
 fi
 
 echo ""
-echo "4️⃣ Building project..."
+echo "4. Building project..."
 if cargo build --release --workspace; then
-    echo "✅ Build successful"
+    echo "OK: Build successful"
 else
-    echo "❌ Build failed"
-    echo "💡 Fix the compilation errors"
+    echo "ERROR: Build failed"
+    echo "TIP: Fix the compilation errors"
     exit 1
 fi
 
 echo ""
-echo "5️⃣ Testing MCP server..."
+echo "5. Testing MCP server..."
 if ./scripts/test-mcp.sh; then
-    echo "✅ MCP server test passed"
+    echo "OK: MCP server test passed"
 else
-    echo "❌ MCP server test failed"
-    echo "💡 Check MCP server configuration"
+    echo "ERROR: MCP server test failed"
+    echo "TIP: Check MCP server configuration"
     exit 1
 fi
 
 echo ""
-echo "🎉 All CI checks passed!"
-echo "✅ Ready to push code"
+echo "SUCCESS: All CI checks passed!"
+echo "Ready to push code"
 echo ""
 echo "Next steps:"
 echo "  git add ."

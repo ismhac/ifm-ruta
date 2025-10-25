@@ -5,8 +5,8 @@
 
 set -e
 
-echo "🚀 Push with CI Checks"
-echo "======================"
+echo "Push with CI Checks"
+echo "==================="
 
 # Change to project directory
 cd "$(dirname "$0")/.."
@@ -16,11 +16,11 @@ echo "Running pre-push checks..."
 ./scripts/pre-push-check.sh
 
 echo ""
-echo "📝 Checking git status..."
+echo "Checking git status..."
 
 # Check if there are changes to commit
 if git diff --quiet && git diff --cached --quiet; then
-    echo "ℹ️  No changes to commit"
+    echo "INFO: No changes to commit"
     exit 0
 fi
 
@@ -28,11 +28,11 @@ fi
 git status
 
 echo ""
-echo "📦 Staging changes..."
+echo "Staging changes..."
 git add .
 
 echo ""
-echo "💬 Commit message:"
+echo "Commit message:"
 if [ -n "$1" ]; then
     COMMIT_MSG="$1"
     echo "Using provided message: $COMMIT_MSG"
@@ -42,13 +42,13 @@ else
 fi
 
 echo ""
-echo "💾 Committing changes..."
+echo "Committing changes..."
 git commit -m "$COMMIT_MSG"
 
 echo ""
-echo "🚀 Pushing to remote..."
+echo "Pushing to remote..."
 git push origin master
 
 echo ""
-echo "✅ Code pushed successfully!"
-echo "🔗 Check CI status: https://github.com/ismhac/ifm-ruta/actions"
+echo "SUCCESS: Code pushed successfully!"
+echo "Check CI status: https://github.com/ismhac/ifm-ruta/actions"

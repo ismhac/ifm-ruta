@@ -50,6 +50,14 @@ A high-performance, cross-platform MCP (Model Context Protocol) server for inter
    }
    ```
 
+4. **Activate MCP Interactive Feedback**:
+   To enable the MCP interactive feedback functionality, you need to communicate with the AI assistant using these specific phrases:
+   
+   - **For questions**: "Whenever you want to ask a question, always call the MCP interactive_feedback."
+   - **For request completion**: "Whenever you're about to complete a user request, call the MCP interactive_feedback instead of simply ending the process. Keep calling MCP until the user's feedback is empty, then end the request."
+   
+   These phrases tell the AI assistant to use the MCP interactive feedback tool instead of ending conversations abruptly.
+
 ### Usage
 
 The MCP server provides the `interactive_feedback` tool with conversation history:

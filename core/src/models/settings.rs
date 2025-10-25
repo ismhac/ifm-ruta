@@ -85,7 +85,7 @@ impl Default for AppSettings {
             performance: PerformanceSettings {
                 max_memory_usage: 100 * 1024 * 1024, // 100MB
                 log_rotation_size: 10 * 1024 * 1024, // 10MB
-                cache_size: 50 * 1024 * 1024, // 50MB
+                cache_size: 50 * 1024 * 1024,        // 50MB
             },
         }
     }

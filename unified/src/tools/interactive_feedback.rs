@@ -1,11 +1,9 @@
 //! Interactive feedback tool implementation
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::process::Command;
 
-use ifm_ruta_core::{
-    traits::{Tool, ToolError, ValidationError},
-};
+use ifm_ruta_core::traits::{Tool, ToolError, ValidationError};
 
 /// Interactive feedback tool
 pub struct InteractiveFeedbackTool;
@@ -15,14 +13,18 @@ impl InteractiveFeedbackTool {
     pub fn new() -> Self {
         Self
     }
-    
+
     // Removed unused methods: get_conversation_history and create_feedback_with_history
-    
+
     /// Create conversation history in Go format
-    fn create_conversation_history_format(&self, previous_user_request: &str, prompt: &str) -> Result<Value, ToolError> {
-        use uuid::Uuid;
+    fn create_conversation_history_format(
+        &self,
+        previous_user_request: &str,
+        prompt: &str,
+    ) -> Result<Value, ToolError> {
         use chrono::Utc;
-        
+        use uuid::Uuid;
+
         let conversation_history = json!([
             {
                 "id": Uuid::new_v4().to_string(),
@@ -34,23 +36,26 @@ impl InteractiveFeedbackTool {
             {
                 "id": Uuid::new_v4().to_string(),
                 "timestamp": Utc::now().to_rfc3339(),
-                "role": "assistant", 
+                "role": "assistant",
                 "content": prompt,
                 "is_current": false
             }
         ]);
-        
+
         Ok(conversation_history)
     }
-    
+
     /// Run interactive feedback with egui GUI (Rust native)
-    fn run_interactive_feedback_with_gui(&self, project_directory: &str, prompt: &str) -> Result<String, ToolError> {
+    fn run_interactive_feedback_with_gui(
+        &self,
+        project_directory: &str,
+        prompt: &str,
+    ) -> Result<String, ToolError> {
         // Use the current unified executable for GUI mode
-        let current_exe = std::env::current_exe()
-            .map_err(|e| ToolError::ExecutionError {
-                message: format!("Failed to get executable path: {}", e),
-            })?;
-        
+        let current_exe = std::env::current_exe().map_err(|e| ToolError::ExecutionError {
+            message: format!("Failed to get executable path: {}", e),
+        })?;
+
         // Run unified executable in GUI mode with project directory and prompt as arguments
         let output = Command::new(current_exe)
             .arg(project_directory)
@@ -59,72 +64,82 @@ impl InteractiveFeedbackTool {
             .map_err(|e| ToolError::ExecutionError {
                 message: format!("Failed to run GUI: {}", e),
             })?;
-        
+
         if !output.status.success() {
             return Err(ToolError::ExecutionError {
-                message: format!("egui GUI failed: {}", String::from_utf8_lossy(&output.stderr)),
+                message: format!(
+                    "egui GUI failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                ),
             });
         }
-        
+
         let user_feedback = String::from_utf8_lossy(&output.stdout).trim().to_string();
         Ok(user_feedback)
     }
-    
+
     /// Save real conversation to storage - append to current conversation only
-    fn save_real_conversation(&self, project_directory: &str, previous_user_request: &str, prompt: &str) -> Result<(), ToolError> {
-        use std::path::Path;
+    fn save_real_conversation(
+        &self,
+        project_directory: &str,
+        previous_user_request: &str,
+        prompt: &str,
+    ) -> Result<(), ToolError> {
         use ifm_ruta_core::services::ConversationStorage;
-        
+        use std::path::Path;
+
         // Setup project directory with .gitignore and README
         self.setup_project_directory(project_directory)?;
-        
+
         let storage = ConversationStorage::new(Path::new(project_directory));
-        storage.initialize()
+        storage
+            .initialize()
             .map_err(|e| ToolError::ExecutionError {
                 message: format!("Failed to initialize storage: {}", e),
             })?;
-        
+
         // Clean up old conversation files, keep only current conversation
         let _ = storage.cleanup_old_sessions(1); // Keep only 1 session (current)
-        
+
         // Use fixed session ID for current conversation only
         let session_id = "current-conversation";
-        
+
         // Add user message if not empty
         if !previous_user_request.is_empty() {
-            storage.add_message(session_id, "user", previous_user_request)
+            storage
+                .add_message(session_id, "user", previous_user_request)
                 .map_err(|e| ToolError::ExecutionError {
                     message: format!("Failed to add user message: {}", e),
                 })?;
         }
-        
+
         // Add assistant message
-        storage.add_message(session_id, "assistant", prompt)
+        storage
+            .add_message(session_id, "assistant", prompt)
             .map_err(|e| ToolError::ExecutionError {
                 message: format!("Failed to add assistant message: {}", e),
             })?;
-        
+
         println!("Added messages to current conversation: {}", session_id);
         Ok(())
     }
-    
+
     /// Setup project directory with .gitignore and README
     fn setup_project_directory(&self, project_directory: &str) -> Result<(), ToolError> {
-        use std::path::Path;
         use std::fs;
-        
+        use std::path::Path;
+
         let project_path = Path::new(project_directory);
-        
+
         // Create .ifm-ruta directory if it doesn't exist
         let ifm_ruta_dir = project_path.join(".ifm-ruta");
         if !ifm_ruta_dir.exists() {
-            fs::create_dir_all(&ifm_ruta_dir)
-                .map_err(|e| ToolError::ExecutionError {
-                    message: format!("Failed to create .ifm-ruta directory: {}", e),
-                })?;
+            fs::create_dir_all(&ifm_ruta_dir).map_err(|e| ToolError::ExecutionError {
+                message: format!("Failed to create .ifm-ruta directory: {}", e),
+            })?;
             println!("Created .ifm-ruta directory");
         }
-        
+
         // Create README.md in .ifm-ruta directory
         let readme_path = ifm_ruta_dir.join("README.md");
         if !readme_path.exists() {
@@ -153,56 +168,56 @@ It is automatically added to `.gitignore` to prevent accidental commits.
 This directory and its contents are automatically managed by the IFM-Ruta MCP tool.
 Do not manually modify the files in this directory.
 ";
-            
-            fs::write(&readme_path, readme_content)
-                .map_err(|e| ToolError::ExecutionError {
-                    message: format!("Failed to create README.md: {}", e),
-                })?;
+
+            fs::write(&readme_path, readme_content).map_err(|e| ToolError::ExecutionError {
+                message: format!("Failed to create README.md: {}", e),
+            })?;
             println!("Created README.md in .ifm-ruta directory");
         }
-        
+
         // Setup .gitignore
         self.setup_gitignore(project_directory)?;
-        
+
         Ok(())
     }
-    
+
     /// Setup .gitignore to exclude .ifm-ruta directory
     fn setup_gitignore(&self, project_directory: &str) -> Result<(), ToolError> {
-        use std::path::Path;
         use std::fs;
-        
+        use std::path::Path;
+
         let gitignore_path = Path::new(project_directory).join(".gitignore");
         let ifm_ruta_ignore = ".ifm-ruta/\n";
-        
+
         if gitignore_path.exists() {
             // Read existing .gitignore
-            let existing_content = fs::read_to_string(&gitignore_path)
-                .map_err(|e| ToolError::ExecutionError {
+            let existing_content =
+                fs::read_to_string(&gitignore_path).map_err(|e| ToolError::ExecutionError {
                     message: format!("Failed to read .gitignore: {}", e),
                 })?;
-            
+
             // Check if .ifm-ruta is already ignored
             if !existing_content.contains(".ifm-ruta/") {
                 // Append .ifm-ruta to existing .gitignore
-                let updated_content = format!("{}\n{}", existing_content.trim_end(), ifm_ruta_ignore);
-                fs::write(&gitignore_path, updated_content)
-                    .map_err(|e| ToolError::ExecutionError {
+                let updated_content =
+                    format!("{}\n{}", existing_content.trim_end(), ifm_ruta_ignore);
+                fs::write(&gitignore_path, updated_content).map_err(|e| {
+                    ToolError::ExecutionError {
                         message: format!("Failed to update .gitignore: {}", e),
-                    })?;
+                    }
+                })?;
                 println!("Added .ifm-ruta/ to existing .gitignore");
             } else {
                 println!(".ifm-ruta/ already in .gitignore");
             }
         } else {
             // Create new .gitignore
-            fs::write(&gitignore_path, ifm_ruta_ignore)
-                .map_err(|e| ToolError::ExecutionError {
-                    message: format!("Failed to create .gitignore: {}", e),
-                })?;
+            fs::write(&gitignore_path, ifm_ruta_ignore).map_err(|e| ToolError::ExecutionError {
+                message: format!("Failed to create .gitignore: {}", e),
+            })?;
             println!("Created .gitignore with .ifm-ruta/ entry");
         }
-        
+
         Ok(())
     }
 }
@@ -211,11 +226,11 @@ impl Tool for InteractiveFeedbackTool {
     fn name(&self) -> &str {
         "interactive_feedback"
     }
-    
+
     fn description(&self) -> &str {
         "Get interactive feedback from user for development tasks"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -236,39 +251,43 @@ impl Tool for InteractiveFeedbackTool {
             "required": ["projectDirectory", "prompt", "previousUserRequest"]
         })
     }
-    
+
     fn execute(&self, input: Value) -> Result<Value, ToolError> {
         // Validate input
         self.validate_input(&input)?;
-        
+
         // Extract parameters (matching Go schema)
-        let project_directory = input.get("projectDirectory")
+        let project_directory = input
+            .get("projectDirectory")
             .and_then(|v| v.as_str())
             .ok_or_else(|| ValidationError::MissingField {
                 field: "projectDirectory".to_string(),
             })?;
-        
-        let prompt = input.get("prompt")
+
+        let prompt = input
+            .get("prompt")
             .and_then(|v| v.as_str())
             .ok_or_else(|| ValidationError::MissingField {
                 field: "prompt".to_string(),
             })?;
-        
-        let previous_user_request = input.get("previousUserRequest")
+
+        let previous_user_request = input
+            .get("previousUserRequest")
             .and_then(|v| v.as_str())
             .ok_or_else(|| ValidationError::MissingField {
                 field: "previousUserRequest".to_string(),
             })?;
-        
+
         // Save real conversation to storage
         self.save_real_conversation(project_directory, previous_user_request, prompt)?;
-        
+
         // Run interactive feedback with Python GUI like Go implementation
         let user_feedback = self.run_interactive_feedback_with_gui(project_directory, prompt)?;
-        
+
         // Create conversation history in Go format
-        let conversation_history = self.create_conversation_history_format(previous_user_request, prompt)?;
-        
+        let conversation_history =
+            self.create_conversation_history_format(previous_user_request, prompt)?;
+
         // Return the result in Go format
         Ok(json!({
             "command_logs": "",
@@ -276,7 +295,7 @@ impl Tool for InteractiveFeedbackTool {
             "conversation_history": conversation_history
         }))
     }
-    
+
     fn validate_input(&self, input: &Value) -> Result<(), ValidationError> {
         // Check required fields
         if !input.is_object() {
@@ -284,16 +303,16 @@ impl Tool for InteractiveFeedbackTool {
                 message: "Input must be an object".to_string(),
             });
         }
-        
+
         let obj = input.as_object().unwrap();
-        
+
         // Check projectDirectory
         if !obj.contains_key("projectDirectory") {
             return Err(ValidationError::MissingField {
                 field: "projectDirectory".to_string(),
             });
         }
-        
+
         if let Some(project_dir) = obj.get("projectDirectory") {
             if !project_dir.is_string() {
                 return Err(ValidationError::InvalidType {
@@ -302,14 +321,14 @@ impl Tool for InteractiveFeedbackTool {
                 });
             }
         }
-        
+
         // Check prompt
         if !obj.contains_key("prompt") {
             return Err(ValidationError::MissingField {
                 field: "prompt".to_string(),
             });
         }
-        
+
         if let Some(prompt) = obj.get("prompt") {
             if !prompt.is_string() {
                 return Err(ValidationError::InvalidType {
@@ -318,14 +337,14 @@ impl Tool for InteractiveFeedbackTool {
                 });
             }
         }
-        
+
         // Check previousUserRequest
         if !obj.contains_key("previousUserRequest") {
             return Err(ValidationError::MissingField {
                 field: "previousUserRequest".to_string(),
             });
         }
-        
+
         if let Some(previous_request) = obj.get("previousUserRequest") {
             if !previous_request.is_string() {
                 return Err(ValidationError::InvalidType {
@@ -334,7 +353,7 @@ impl Tool for InteractiveFeedbackTool {
                 });
             }
         }
-        
+
         Ok(())
     }
 }

@@ -10,7 +10,7 @@ pub fn init_logging(level: Level) -> Result<(), LoggingError> {
         .with_thread_ids(true)
         .with_thread_names(true)
         .init();
-    
+
     Ok(())
 }
 
@@ -19,7 +19,7 @@ pub fn init_logging(level: Level) -> Result<(), LoggingError> {
 pub enum LoggingError {
     #[error("Failed to initialize logging: {message}")]
     InitializationError { message: String },
-    
+
     #[error("Logging configuration error: {message}")]
     ConfigurationError { message: String },
 }

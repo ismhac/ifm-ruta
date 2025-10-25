@@ -1,9 +1,9 @@
 //! Conversation logging utility for tracking user-agent interactions
 
+use crate::models::AppError;
+use crate::services::ConversationStorage;
 use std::path::Path;
 use uuid::Uuid;
-use crate::services::ConversationStorage;
-use crate::models::AppError;
 
 /// Conversation logger for tracking user-agent interactions
 pub struct ConversationLogger {
@@ -16,38 +16,40 @@ impl ConversationLogger {
     pub fn new(project_directory: &Path) -> Self {
         let storage = ConversationStorage::new(project_directory);
         let current_session_id = Uuid::new_v4().to_string();
-        
+
         Self {
             storage,
             current_session_id,
         }
     }
-    
+
     /// Initialize the logger
     pub fn initialize(&self) -> Result<(), AppError> {
         self.storage.initialize()
     }
-    
+
     /// Log a user message
     pub fn log_user_message(&self, content: &str) -> Result<(), AppError> {
-        self.storage.add_message(&self.current_session_id, "user", content)
+        self.storage
+            .add_message(&self.current_session_id, "user", content)
     }
-    
+
     /// Log an assistant message
     pub fn log_assistant_message(&self, content: &str) -> Result<(), AppError> {
-        self.storage.add_message(&self.current_session_id, "assistant", content)
+        self.storage
+            .add_message(&self.current_session_id, "assistant", content)
     }
-    
+
     /// Get current session ID
     pub fn get_session_id(&self) -> &str {
         &self.current_session_id
     }
-    
+
     /// Create a new session
     pub fn new_session(&mut self) {
         self.current_session_id = Uuid::new_v4().to_string();
     }
-    
+
     /// Get conversation history (latest 5)
     pub fn get_conversation_history(&self) -> Result<String, AppError> {
         self.storage.get_latest_5_conversations()

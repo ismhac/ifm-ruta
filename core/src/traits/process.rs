@@ -1,20 +1,25 @@
 //! Process management interface
 
 use std::path::Path;
-use std::time::Duration;
 use std::result::Result;
+use std::time::Duration;
 
 /// Process management interface
 pub trait ProcessManager {
     /// Spawn a new process
-    fn spawn_process(&self, command: &str, args: &[String], cwd: &Path) -> Result<ProcessHandle, ProcessError>;
-    
+    fn spawn_process(
+        &self,
+        command: &str,
+        args: &[String],
+        cwd: &Path,
+    ) -> Result<ProcessHandle, ProcessError>;
+
     /// Kill a running process
     fn kill_process(&self, handle: &ProcessHandle) -> Result<(), ProcessError>;
-    
+
     /// Wait for a process to complete
     fn wait_for_process(&self, handle: &ProcessHandle) -> Result<ProcessResult, ProcessError>;
-    
+
     /// Get process output (stdout/stderr)
     fn get_process_output(&self, handle: &ProcessHandle) -> Result<ProcessOutput, ProcessError>;
 }
@@ -60,19 +65,19 @@ pub struct ProcessOutput {
 pub enum ProcessError {
     #[error("Process not found: {id}")]
     ProcessNotFound { id: String },
-    
+
     #[error("Process already running: {id}")]
     ProcessAlreadyRunning { id: String },
-    
+
     #[error("Process execution failed: {message}")]
     ExecutionFailed { message: String },
-    
+
     #[error("Permission denied: {message}")]
     PermissionDenied { message: String },
-    
+
     #[error("Timeout: process execution timed out")]
     Timeout,
-    
+
     #[error("Internal error: {0}")]
     InternalError(#[from] anyhow::Error),
 }

@@ -2,8 +2,8 @@
 
 use std::path::PathBuf;
 
-use crate::traits::{SettingsManager, SettingsError};
 use crate::models::AppSettings;
+use crate::traits::{SettingsError, SettingsManager};
 
 /// Settings manager implementation
 pub struct SettingsManagerImpl {
@@ -20,7 +20,7 @@ impl SettingsManagerImpl {
             settings_path,
         }
     }
-    
+
     /// Get the settings file path
     fn get_settings_path() -> PathBuf {
         dirs::config_dir()
@@ -28,7 +28,6 @@ impl SettingsManagerImpl {
             .join("ifm-ruta")
             .join("settings.toml")
     }
-    
 }
 
 impl SettingsManager for SettingsManagerImpl {
@@ -39,18 +38,18 @@ impl SettingsManager for SettingsManagerImpl {
         }
         Ok(())
     }
-    
+
     fn save_settings(&self) -> Result<(), SettingsError> {
         // Create directory if it doesn't exist
         if let Some(parent) = self.settings_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        
+
         let content = toml::to_string_pretty(&self.settings)?;
         std::fs::write(&self.settings_path, content)?;
         Ok(())
     }
-    
+
     fn reset_settings(&self) -> Result<(), SettingsError> {
         let default_settings = AppSettings::default();
         let content = toml::to_string_pretty(&default_settings)?;

@@ -1,26 +1,26 @@
 //! Command interface and related types
 
-use std::path::PathBuf;
-use std::sync::Arc;
 use serde_json::Value;
+use std::path::PathBuf;
 use std::result::Result;
+use std::sync::Arc;
 
-use crate::traits::{SettingsManager, ProcessManager, EventBus};
+use crate::traits::{EventBus, ProcessManager, SettingsManager};
 
 /// Core command interface
 pub trait Command {
     /// Get the command name
     fn name(&self) -> &str;
-    
+
     /// Get the command description
     fn description(&self) -> &str;
-    
+
     /// Execute the command with given context
     fn execute(&self, context: &CommandContext) -> Result<CommandResult, CommandError>;
-    
+
     /// Check if the command can be undone
     fn can_undo(&self) -> bool;
-    
+
     /// Undo the command if possible
     fn undo(&self, context: &CommandContext) -> Result<(), CommandError>;
 }
@@ -46,16 +46,16 @@ pub struct CommandResult {
 pub enum CommandError {
     #[error("Command not found: {name}")]
     CommandNotFound { name: String },
-    
+
     #[error("Execution failed: {message}")]
     ExecutionFailed { message: String },
-    
+
     #[error("Invalid arguments: {message}")]
     InvalidArguments { message: String },
-    
+
     #[error("Permission denied: {message}")]
     PermissionDenied { message: String },
-    
+
     #[error("Internal error: {0}")]
     InternalError(#[from] anyhow::Error),
 }

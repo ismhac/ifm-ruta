@@ -1,7 +1,7 @@
 //! Input validation utilities
 
-use std::collections::HashSet;
 use crate::traits::{ValidationError, ValidationRule};
+use std::collections::HashSet;
 
 /// Input validator
 pub struct InputValidator {
@@ -11,16 +11,14 @@ pub struct InputValidator {
 impl InputValidator {
     /// Create a new input validator
     pub fn new() -> Self {
-        Self {
-            rules: Vec::new(),
-        }
+        Self { rules: Vec::new() }
     }
-    
+
     /// Add a validation rule
     pub fn add_rule(&mut self, rule: Box<dyn ValidationRule>) {
         self.rules.push(rule);
     }
-    
+
     /// Validate input against all rules
     pub fn validate(&self, input: &str) -> Result<(), ValidationError> {
         for rule in &self.rules {
@@ -50,14 +48,14 @@ impl ValidationRule for CommandValidationRule {
                 message: "Path traversal detected".to_string(),
             });
         }
-        
+
         // Check for dangerous characters
         if input.contains(";") || input.contains("&") || input.contains("|") {
             return Err(ValidationError::InvalidInput {
                 message: "Dangerous characters detected".to_string(),
             });
         }
-        
+
         // Check if command is allowed
         let command = input.split_whitespace().next().unwrap_or("");
         if !self.allowed_commands.is_empty() && !self.allowed_commands.contains(command) {
@@ -65,10 +63,10 @@ impl ValidationRule for CommandValidationRule {
                 message: format!("Command not allowed: {}", command),
             });
         }
-        
+
         Ok(())
     }
-    
+
     fn rule_name(&self) -> &str {
         "CommandValidationRule"
     }
@@ -92,17 +90,17 @@ impl ValidationRule for PathValidationRule {
                 message: "Path traversal detected".to_string(),
             });
         }
-        
+
         // Check for absolute paths (optional restriction)
         if input.starts_with('/') || input.starts_with('\\') {
             return Err(ValidationError::InvalidInput {
                 message: "Absolute paths not allowed".to_string(),
             });
         }
-        
+
         Ok(())
     }
-    
+
     fn rule_name(&self) -> &str {
         "PathValidationRule"
     }

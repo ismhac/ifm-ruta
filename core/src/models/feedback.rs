@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 /// Feedback data structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,32 +49,32 @@ impl Feedback {
             metadata: FeedbackMetadata::default(),
         }
     }
-    
+
     /// Set command logs
     pub fn set_command_logs(&mut self, logs: String) {
         self.command_logs = logs;
     }
-    
+
     /// Set interactive feedback
     pub fn set_interactive_feedback(&mut self, feedback: String) {
         self.interactive_feedback = feedback;
     }
-    
+
     /// Add executed command
     pub fn add_executed_command(&mut self, command: String) {
         self.metadata.commands_executed.push(command);
     }
-    
+
     /// Set execution time
     pub fn set_execution_time(&mut self, duration: Duration) {
         self.metadata.execution_time = duration;
     }
-    
+
     /// Set user interaction time
     pub fn set_user_interaction_time(&mut self, duration: Duration) {
         self.metadata.user_interaction_time = duration;
     }
-    
+
     /// Set conversation history
     pub fn set_conversation_history(&mut self, history: String) {
         self.conversation_history = history;

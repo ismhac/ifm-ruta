@@ -1,12 +1,12 @@
 //! MCP server implementation
 
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
-use serde_json::{Value, json};
 
 use ifm_ruta_core::{
-    traits::{Tool, SettingsManager, ProcessManager, EventBus},
     models::AppError,
+    traits::{EventBus, ProcessManager, SettingsManager, Tool},
 };
 
 /// MCP Request struct like Go
@@ -58,13 +58,13 @@ impl MCPServer {
             event_bus,
         }
     }
-    
+
     /// Register a tool
     pub fn register_tool(&mut self, tool: Box<dyn Tool>) {
         let name = tool.name().to_string();
         self.tools.insert(name, tool);
     }
-    
+
     /// Handle a request like Go
     pub fn handle_request(&self, request: MCPRequest) -> Result<Option<MCPResponse>, AppError> {
         // Check if this is a notification (no id field)
@@ -81,7 +81,7 @@ impl MCPServer {
                 }
             }
         }
-        
+
         // This is a request (has id) - send response
         let response = match request.method.as_str() {
             "initialize" => self.handle_initialize(request),
@@ -97,10 +97,10 @@ impl MCPServer {
                 }),
             }),
         };
-        
+
         response.map(Some)
     }
-    
+
     /// Handle initialize request like Go
     fn handle_initialize(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
         Ok(MCPResponse {
@@ -121,10 +121,11 @@ impl MCPServer {
             error: None,
         })
     }
-    
+
     /// Handle tools/list request like Go
     fn handle_tools_list(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
-        let tools: Vec<Value> = self.tools
+        let tools: Vec<Value> = self
+            .tools
             .values()
             .map(|tool| {
                 json!({
@@ -134,7 +135,7 @@ impl MCPServer {
                 })
             })
             .collect();
-        
+
         Ok(MCPResponse {
             jsonrpc: "2.0".to_string(),
             id: request.id,
@@ -144,25 +145,25 @@ impl MCPServer {
             error: None,
         })
     }
-    
+
     /// Handle tools/call request like Go
     fn handle_tool_call(&self, request: MCPRequest) -> Result<MCPResponse, AppError> {
         let params = request.params.unwrap_or(json!({}));
-        let tool_name = params.get("name")
+        let tool_name = params
+            .get("name")
             .and_then(|v| v.as_str())
             .ok_or_else(|| AppError::InternalError(anyhow::anyhow!("Missing tool name")))?;
-        
-        let arguments = params.get("arguments")
-            .cloned()
-            .unwrap_or(json!({}));
-        
-        let tool = self.tools.get(tool_name)
-            .ok_or_else(|| AppError::InternalError(anyhow::anyhow!("Tool not found: {}", tool_name)))?;
-        
+
+        let arguments = params.get("arguments").cloned().unwrap_or(json!({}));
+
+        let tool = self.tools.get(tool_name).ok_or_else(|| {
+            AppError::InternalError(anyhow::anyhow!("Tool not found: {}", tool_name))
+        })?;
+
         // Execute the tool
         let tool_result = tool.execute(arguments)?;
         let result_json = serde_json::to_string(&tool_result)?;
-        
+
         Ok(MCPResponse {
             jsonrpc: "2.0".to_string(),
             id: request.id,

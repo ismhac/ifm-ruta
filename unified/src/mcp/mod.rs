@@ -1,7 +1,7 @@
 //! MCP protocol implementation
 
-pub mod server;
 pub mod protocol;
+pub mod server;
 
 // Re-export
 pub use server::*;

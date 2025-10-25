@@ -11,6 +11,12 @@ pub struct SettingsManagerImpl {
     settings_path: PathBuf,
 }
 
+impl Default for SettingsManagerImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SettingsManagerImpl {
     /// Create a new settings manager
     pub fn new() -> Self {

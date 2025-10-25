@@ -5,6 +5,7 @@ use serde_json::Value;
 
 /// MCP request
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct MCPRequest {
     pub jsonrpc: String,
     pub id: Option<Value>,
@@ -14,6 +15,7 @@ pub struct MCPRequest {
 
 /// MCP response
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct MCPResponse {
     pub jsonrpc: String,
     pub id: Option<Value>,
@@ -23,6 +25,7 @@ pub struct MCPResponse {
 
 /// MCP error
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct MCPError {
     pub code: i32,
     pub message: String,

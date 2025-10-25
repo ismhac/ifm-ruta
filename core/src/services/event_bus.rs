@@ -5,14 +5,25 @@ use std::sync::{Arc, Mutex};
 
 use crate::traits::{Event, EventBus, EventError, EventListener, EventType};
 
+/// Type alias for complex listener map
+type ListenerMap = HashMap<EventType, Vec<Box<dyn EventListener>>>;
+
 /// Event bus implementation
+#[allow(clippy::type_complexity, clippy::arc_with_non_send_sync)]
 pub struct EventBusImpl {
-    listeners: Arc<Mutex<HashMap<EventType, Vec<Box<dyn EventListener>>>>>,
+    listeners: Arc<Mutex<ListenerMap>>,
     event_queue: Arc<Mutex<Vec<Event>>>,
+}
+
+impl Default for EventBusImpl {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl EventBusImpl {
     /// Create a new event bus
+    #[allow(clippy::arc_with_non_send_sync)]
     pub fn new() -> Self {
         Self {
             listeners: Arc::new(Mutex::new(HashMap::new())),
@@ -24,10 +35,7 @@ impl EventBusImpl {
 impl EventBus for EventBusImpl {
     fn subscribe(&mut self, event_type: EventType, listener: Box<dyn EventListener>) {
         let mut listeners = self.listeners.lock().unwrap();
-        listeners
-            .entry(event_type)
-            .or_insert_with(Vec::new)
-            .push(listener);
+        listeners.entry(event_type).or_default().push(listener);
     }
 
     fn unsubscribe(&mut self, event_type: EventType, listener_id: &str) {

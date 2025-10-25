@@ -8,6 +8,12 @@ pub struct InputValidator {
     rules: Vec<Box<dyn ValidationRule>>,
 }
 
+impl Default for InputValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InputValidator {
     /// Create a new input validator
     pub fn new() -> Self {
@@ -74,6 +80,12 @@ impl ValidationRule for CommandValidationRule {
 
 /// Path validation rule
 pub struct PathValidationRule;
+
+impl Default for PathValidationRule {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl PathValidationRule {
     /// Create a new path validation rule

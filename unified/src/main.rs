@@ -180,7 +180,7 @@ impl App {
 
     fn cancel_feedback(&mut self) {
         // Output empty feedback
-        println!("");
+        println!();
 
         // Close application
         std::process::exit(0);
@@ -338,10 +338,7 @@ impl eframe::App for App {
                                             _ => eframe::egui::Color32::from_rgb(200, 200, 200),
                                         };
 
-                                        ui.colored_label(
-                                            role_color,
-                                            format!("{}", entry.role.to_uppercase()),
-                                        );
+                                        ui.colored_label(role_color, entry.role.to_uppercase());
                                         ui.with_layout(
                                             eframe::egui::Layout::right_to_left(
                                                 eframe::egui::Align::Center,
@@ -648,6 +645,7 @@ fn run_mcp_server() -> Result<(), AppError> {
     // Initialize core services
     let settings_manager = std::sync::Arc::new(SettingsManagerImpl::new());
     let process_manager = std::sync::Arc::new(ProcessManagerImpl::new());
+    #[allow(clippy::arc_with_non_send_sync)]
     let event_bus = std::sync::Arc::new(EventBusImpl::new());
 
     // Create MCP server
@@ -658,9 +656,9 @@ fn run_mcp_server() -> Result<(), AppError> {
 
     // Run the server with stdin/stdout like Go
     let stdin = io::stdin();
-    let mut lines = stdin.lock().lines();
+    let lines = stdin.lock().lines();
 
-    while let Some(line) = lines.next() {
+    for line in lines {
         let line = line?;
         let line = line.trim();
         if line.is_empty() {
@@ -668,7 +666,7 @@ fn run_mcp_server() -> Result<(), AppError> {
         }
 
         // Parse JSON request like Go
-        let request: MCPRequest = serde_json::from_str(&line)?;
+        let request: MCPRequest = serde_json::from_str(line)?;
 
         // Handle request and send response like Go
         if let Some(response) = server.handle_request(request)? {

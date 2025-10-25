@@ -15,6 +15,12 @@ pub struct ProcessManagerImpl {
     processes: Arc<Mutex<HashMap<String, ProcessHandle>>>,
 }
 
+impl Default for ProcessManagerImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProcessManagerImpl {
     /// Create a new process manager
     pub fn new() -> Self {

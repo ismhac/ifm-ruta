@@ -238,7 +238,7 @@ impl ConversationStorage {
                 history.push_str(&format!("  Content: {}\n\n", message.content));
             }
 
-            history.push_str("\n");
+            history.push('\n');
         }
 
         Ok(history)

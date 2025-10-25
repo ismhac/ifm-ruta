@@ -12,6 +12,7 @@ use ifm_ruta_core::{
 /// MCP Request struct like Go
 #[derive(Debug, serde::Deserialize)]
 pub struct MCPRequest {
+    #[allow(dead_code)]
     pub jsonrpc: String,
     pub id: Option<Value>,
     pub method: String,
@@ -39,8 +40,11 @@ pub struct MCPError {
 /// MCP server
 pub struct MCPServer {
     tools: HashMap<String, Box<dyn Tool>>,
+    #[allow(dead_code)]
     settings_manager: Arc<dyn SettingsManager>,
+    #[allow(dead_code)]
     process_manager: Arc<dyn ProcessManager>,
+    #[allow(dead_code)]
     event_bus: Arc<dyn EventBus>,
 }
 
